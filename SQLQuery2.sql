@@ -1,0 +1,274 @@
+﻿-- Bảng KHÁCH HÀNG
+CREATE TABLE KHACHHANG (
+    MAKH INT IDENTITY(1,1) PRIMARY KEY,
+    TENKH NVARCHAR(100) NOT NULL,
+    SODIENTHOAI NVARCHAR(20) NULL,
+    DIACHI NVARCHAR(200) NULL
+);
+GO
+
+-- Bảng KHO
+CREATE TABLE KHO (
+    MAK INT IDENTITY(1,1) PRIMARY KEY,
+    TENK NVARCHAR(100) NOT NULL,
+    DIACHIK NVARCHAR(200) NULL
+);
+GO
+
+-- Bảng NHÀ PHÂN PHỐI
+CREATE TABLE NHAPHANPHOI (
+    MANPP INT IDENTITY(1,1) PRIMARY KEY,
+    TENNPP NVARCHAR(100) NOT NULL,
+    DIACHI NVARCHAR(200) NULL,
+    SODIENTHOAI NVARCHAR(20) NULL,
+    EMAIL NVARCHAR(100) NULL
+);
+GO
+
+-- Bảng KHUYẾN MÃI
+CREATE TABLE KHUYENMAI (
+    MAKM INT IDENTITY(1,1) PRIMARY KEY,
+    TENKM NVARCHAR(100) NOT NULL,
+    PHANTRAMGIAM DECIMAL(5,2) NOT NULL,  -- ví dụ: 15.00 => giảm 15%
+    NGAYBATDAU DATE NOT NULL,
+    NGAYKETTHUC DATE NOT NULL
+);
+GO
+
+-- Bảng SẢN PHẨM
+CREATE TABLE SANPHAM (
+    MASP INT IDENTITY(1,1) PRIMARY KEY,
+    TENSP NVARCHAR(100) NOT NULL,
+    MOTA NVARCHAR(500) NULL,
+    THOIDIEMMUA DATE NOT NULL
+);
+GO
+
+-- Bảng NGƯỜI DÙNG
+CREATE TABLE NGUOIDUNG (
+    MANGUOIDUNG INT IDENTITY(1,1) PRIMARY KEY,
+    TENDANGNHAP NVARCHAR(50) NOT NULL,
+    MATKHAU NVARCHAR(255) NOT NULL,
+    VAITRO INT NOT NULL,             -- vai trò lưu dưới dạng int (ví dụ: 1 - Admin, 2 - User,...)
+    TEN NVARCHAR(100) NOT NULL,
+    SODIENTHOAI NVARCHAR(20) NULL,
+    EMAIL NVARCHAR(100) NULL,
+    CCCD NVARCHAR(20) NULL,
+    DIACHI NVARCHAR(200) NULL,
+    VOHIEUHOA INT NOT NULL,           -- trạng thái khoá (0 - kích hoạt, 1 - vô hiệu)
+    GHICHU NVARCHAR(500) NULL
+);
+GO
+
+-- Bảng ĐƠN HÀNG
+CREATE TABLE DONHANG (
+    MADH INT IDENTITY(1,1) PRIMARY KEY,
+    MAKH INT NOT NULL,
+    MAK INT NOT NULL,
+    MASHI INt null,          -- mã số giao hàng (có thể dùng cho tracking)
+    MANPP INT NOT NULL,
+    TONGTIEN DECIMAL(18,2) NOT NULL,
+    TRANGTHAIGH INT NOT NULL,         -- trạng thái đơn hàng (lưu dưới dạng int)
+    NGAYTAO DATE NOT NULL,
+    DIACHIGH NVARCHAR(200) NOT NULL,  -- địa chỉ giao hàng
+    NGAYGIAO DATE NULL,               -- cho đến khi giao hàng có thể để NULL
+    PHISHIP DECIMAL(18,2) NOT NULL,
+    CONSTRAINT FK_DONHANG_KHACHHANG FOREIGN KEY (MAKH) REFERENCES KHACHHANG(MAKH),
+    CONSTRAINT FK_DONHANG_KHO FOREIGN KEY (MAK) REFERENCES KHO(MAK),
+    CONSTRAINT FK_DONHANG_NHAPHANPHOI FOREIGN KEY (MANPP) REFERENCES NHAPHANPHOI(MANPP),
+    CONSTRAINT FK_DONHANG_SHIPPER FOREIGN KEY (MASHI) REFERENCES NGUOIDUNG(MANGUOIDUNG)
+);
+GO
+
+-- Bảng CHI TIẾT ĐƠN HÀNG
+CREATE TABLE CHITIET_DONHANG (
+    MADH INT NOT NULL,
+    MASP INT NOT NULL,
+    SOLUONG INT NOT NULL,
+    GIABAN DECIMAL(18,2) NOT NULL,
+    THANHTIEN DECIMAL(18,2) NOT NULL,
+    KHOILUONG DECIMAL(10,2) NOT NULL,
+    PRIMARY KEY (MADH, MASP),
+    CONSTRAINT FK_CHITIET_DONHANG_DONHANG FOREIGN KEY (MADH) REFERENCES DONHANG(MADH),
+    CONSTRAINT FK_CHITIET_DONHANG_SANPHAM FOREIGN KEY (MASP) REFERENCES SANPHAM(MASP)
+);
+GO
+
+-- Bảng LỊCH SỬ GIAO HÀNG
+CREATE TABLE LICHSUGH (
+    MALS INT IDENTITY(1,1) PRIMARY KEY,
+    MADH INT NOT NULL,
+    THOIGIANCAPNHAT DATE NOT NULL,
+    TRANGTHAIMOI INT NOT NULL,       -- trạng thái mới của đơn hàng
+    LANGIAO INT NOT NULL,            -- ví dụ: số lần giao hàng, lưu dưới dạng int
+    CONSTRAINT FK_LICHSUGH_DONHANG FOREIGN KEY (MADH) REFERENCES DONHANG(MADH)
+);
+GO
+
+-- Bảng CHI TIẾT KHUYẾN MÃI (liên kết sản phẩm với khuyến mãi)
+CREATE TABLE CHITIET_KHUYENMAI (
+    MADH INT NOT NULL,
+    MAKM INT NOT NULL,
+    PRIMARY KEY (MADH, MAKM),
+    CONSTRAINT FK_CT_KM_SANPHAM FOREIGN KEY (MADH) REFERENCES DONHANG(MADH),
+    CONSTRAINT FK_CT_KM_KHUYENMAI FOREIGN KEY (MAKM) REFERENCES KHUYENMAI(MAKM)
+);
+GO
+
+-- 1. Thêm dữ liệu vào bảng KHACHHANG
+INSERT INTO KHACHHANG (TENKH, SODIENTHOAI, DIACHI)
+VALUES 
+(N'Nguyễn Văn Nam', N'0123456789', N'Phong Điền, Cần Thơ'),
+(N'Nguyễn Thị Cẩm Hằng', N'0123456789', N'Phong Điền, Cần Thơ'),
+(N'Nguyễn Thị Thanh Nguyên', N'0123456789', N'Phong Điền, Cần Thơ'),
+(N'Nguyễn Trần Việt', N'0123456789', N'123 Trần Phú, Cần Thơ'),
+(N'Nguyễn Văn Thái', N'0123456789', N'123 Nguyễn Văn Linh, Cần Thơ'),
+(N'Trần Thị Bình', N'0987654321', N'Hẽm 12 Đường 30/4, Cần Thơ');
+GO
+
+-- 2. Thêm dữ liệu vào bảng KHO
+INSERT INTO KHO (TENK, DIACHIK)
+VALUES
+(N'Kho 1', N'Phong Điền, Cần Thơ'),
+(N'Kho 2', N'Mậu Thân, Cần Thơ');
+GO
+
+-- 3. Thêm dữ liệu vào bảng NHAPHANPHOI
+INSERT INTO NHAPHANPHOI (TENNPP, DIACHI, SODIENTHOAI, EMAIL)
+VALUES
+(N'Nhà Phân Phối A', N'123 Đường A, TP. HCM', N'0123456789', N'nppA@example.com'),
+(N'Nhà Phân Phối B', N'123 Đường B, TP. HCM', N'0123456789', N'nppB@example.com'),
+(N'Nhà Phân Phối C', N'123 Đường C, TP. HCM', N'0123456789', N'nppC@example.com'),
+(N'Nhà Phân Phối D', N'456 Đường D, Hà Nội', N'0987654321', N'nppD@example.com');
+GO
+
+-- 4. Thêm dữ liệu vào bảng KHUYENMAI
+INSERT INTO KHUYENMAI (TENKM, PHANTRAMGIAM, NGAYBATDAU, NGAYKETTHUC)
+VALUES
+(N'Khuyến mãi 1', 10.00, '2025-06-01', '2025-06-30'),
+(N'Khuyến mãi 2', 20.00, '2025-02-18', '2025-02-20'),
+(N'Khuyến mãi 3', 20.00, '2025-02-18', '2025-02-24'),
+(N'Khuyến mãi 4', 10.00, '2025-12-01', '2025-12-31');
+GO
+
+-- 5. Thêm dữ liệu vào bảng SANPHAM
+INSERT INTO SANPHAM (TENSP, MOTA, THOIDIEMMUA)
+VALUES
+(N'Áo Hoddie', N'Áo Hoddie Cao Cấp', '2024-12-28'),
+(N'Card RTX-4060', N'Card đồ họa rời', '2024-12-29'),
+(N'Dép Sandan', N'Dép Sandan', '2025-02-01'),
+(N'Bàn Phím Cơ Monka', N'Bàn phím cơ Monka', '2025-02-18'),
+(N'Giày Âu', N'Giày Âu nam', '2025-02-18'),
+(N'Quần Áo', N'Quần áo nam', '2025-02-18'),
+(N'Chuột máy tính', N'Chuột máy tính', '2025-02-18'),
+(N'Màng hình máy tính', N'Màng hình máy tính', '2025-02-19'),
+(N'Hub chuyển đổi', N'Hub chuyển đổi type C', '2025-02-19'),
+(N'Lót chuột', N'Lót chuột nỉ', '2025-02-20');
+GO
+
+-- 6. Thêm dữ liệu vào bảng NGUOIDUNG
+INSERT INTO NGUOIDUNG (TENDANGNHAP, MATKHAU, VAITRO, TEN, SODIENTHOAI, EMAIL, CCCD, DIACHI, VOHIEUHOA, GHICHU)
+VALUES
+(N'admin', N'admin123', 1, N'Bành Thị Diễm Hương', N'0123456789', N'admin@example.com', N'123456789', N'KDC Nam Long, Cần Thơ', 0, Null),
+(N'shipper', N'ship123', 2, N'Nguyễn Chí Tâm', N'0987654321', N'user1@example.com', N'987654321', N'Phong Điền, Cần Thơ', 0, Null);
+GO
+
+-- 7. Thêm dữ liệu vào bảng DONHANG
+-- Lưu ý: Các giá trị MAKH, MAK, MANPP, MAKM phải tồn tại trong các bảng liên quan.
+INSERT INTO DONHANG (MAKH, MAK, MASHI, MANPP,  TONGTIEN, TRANGTHAIGH, NGAYTAO, DIACHIGH, NGAYGIAO, PHISHIP)
+VALUES
+(1, 1, 2, 1,  1000000.00, 1, '2025-02-18', N'123 Đường A, TP. HCM', '2025-02-18', 50000.00), 
+(1, 1, 2, 2,  1000000.00, 1, '2025-02-18', N'123 Đường A, TP. HCM', '2025-02-19', 50000.00), 
+(2, 2, 2, 3,  1000000.00, 1, '2025-02-18', N'123 Đường A, TP. HCM', '2025-02-19', 50000.00), 
+(3, 2, 2, 4,  1000000.00, 1, '2025-02-18', N'123 Đường A, TP. HCM', '2025-02-20', 50000.00), 
+(4, 2, 2, 1,  1000000.00, 1, '2025-02-18', N'123 Đường A, TP. HCM', '2025-02-20', 50000.00), 
+(5, 1, 2, 2,  1000000.00, 1, '2025-02-18', N'123 Đường A, TP. HCM', '2025-02-21', 50000.00), 
+(6, 1, 2, 3,  1000000.00, 1, '2025-02-18', N'123 Đường A, TP. HCM', '2025-02-21', 50000.00), 
+(2, 2, 2, 4,  1000000.00, 1, '2025-02-18', N'123 Đường A, TP. HCM', '2025-02-22', 50000.00), 
+(3, 1, 2, 1,  1000000.00, 1, '2025-02-18', N'123 Đường A, TP. HCM', '2025-02-22', 50000.00), 
+(5, 2, 2, 2,  1000000.00, 1, '2025-02-18', N'123 Đường A, TP. HCM', '2025-02-23', 50000.00), 
+(4, 1, 2, 3,  200000.00, 1, '2025-02-18', N'123 Đường A, TP. HCM', '2025-02-23', 50000.00) ; 
+GO
+
+-- 8. Thêm dữ liệu vào bảng CHITIET_DONHANG
+-- Giả sử đơn hàng MADH = 1 và sản phẩm MASP = 1,2 đã có sẵn.
+INSERT INTO CHITIET_DONHANG (MADH, MASP, SOLUONG, GIABAN, THANHTIEN, KHOILUONG)
+VALUES
+(1, 1, 2, 500000.00, 1000000.00, 0.5),
+(2, 1, 2, 500000.00, 1000000.00, 0.5),
+(3, 3, 2, 500000.00, 1000000.00, 1.5),
+(4, 4, 2, 500000.00, 1000000.00, 1.0),
+(5, 5, 2, 500000.00, 1000000.00, 0.5),
+(6, 6, 2, 500000.00, 1000000.00, 0.5),
+(7, 7, 2, 500000.00, 1000000.00, 1.5),
+(8, 8, 2, 500000.00, 1000000.00, 1.5),
+(9, 9, 2, 500000.00, 1000000.00, 0.5),
+(10, 10, 2, 500000.00, 1000000.00, 0.5),
+(11, 1, 1, 200000.00, 200000.00, 0.5);
+GO
+
+-- 9. Thêm dữ liệu vào bảng LICHSUGH
+-- Ghi nhận các trạng thái cập nhật đơn hàng.
+
+
+-- 10. Thêm dữ liệu vào bảng CHITIET_KHUYENMAI
+-- Liên kết sản phẩm với khuyến mãi.
+INSERT INTO CHITIET_KHUYENMAI (MADH, MAKM)
+VALUES
+(1, 1),
+(1, 2);
+GO
+
+
+Create PROCEDURE SP_THEM_LICHSUGH
+    @MADH INT,
+    @TRANGTHAIMOI INT
+AS
+BEGIN
+    -- SET NOCOUNT ON;  -- ⚠️ Bỏ dòng này nếu cần lấy số dòng bị ảnh hưởng
+
+    DECLARE @LANGIAO INT;
+
+    -- Xác định số lần giao trước đó và tăng lên 1
+    SELECT @LANGIAO = ISNULL(MAX(LANGIAO), 0) + 1
+    FROM LICHSUGH
+    WHERE MADH = @MADH;
+
+    -- Thêm bản ghi vào bảng LICHSUGH
+    INSERT INTO LICHSUGH (MADH, THOIGIANCAPNHAT, TRANGTHAIMOI, LANGIAO)
+    VALUES (@MADH, GETDATE(), @TRANGTHAIMOI, @LANGIAO);
+
+    -- Trả về số dòng bị ảnh hưởng
+    SELECT @@ROWCOUNT AS SoDongBiAnhHuong;
+END;
+
+
+
+
+CREATE TRIGGER TRG_UPDATE_TRANGTHAIGH
+ON LICHSUGH
+AFTER INSERT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Cập nhật trạng thái giao hàng thành công (2) nếu trạngthaimoi = 1 (thành công)
+    UPDATE DONHANG
+    SET TRANGTHAIGH = 2
+    FROM DONHANG DH
+    INNER JOIN inserted I ON DH.MADH = I.MADH
+    WHERE I.TRANGTHAIMOI = 1;
+
+    -- Kiểm tra số lần giao thất bại (trạngthaimoi = 2) của đơn hàng
+    UPDATE DONHANG
+    SET TRANGTHAIGH = 3  -- Cập nhật trạng thái thất bại (3)
+    FROM DONHANG DH
+    WHERE EXISTS (
+        SELECT 1
+        FROM LICHSUGH LS
+        WHERE LS.MADH = DH.MADH
+        AND LS.TRANGTHAIMOI = 2
+        GROUP BY LS.MADH
+        HAVING COUNT(*) >= 3
+    );
+END;
